@@ -1,5 +1,5 @@
 {
-  "name": "remutable",
+  "name": "immutable-rml",
   "namespace": true,
   "package-specs": {
     "in-source": true,

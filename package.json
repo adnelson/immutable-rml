@@ -1,11 +1,11 @@
 {
-  "name": "remutable",
+  "name": "immutable-rml",
   "version": "0.1.0",
   "description": "ReasonML immutable datastructure library backed by immutablejs",
   "main": "index.js",
   "repository": "https://github.com/adnelson/remutable",
   "author": "Allen Nelson",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "dependencies": {
     "bs-platform": "^7.0.1",
     "immutable": "^4.0.0-rc.12"
