@@ -1,0 +1,17 @@
+{
+  "name": "remutable",
+  "namespace": true,
+  "package-specs": {
+    "in-source": true,
+    "module": "commonjs"
+  },
+  "refmt": 3,
+  "sources": [
+    "src"
+  ],
+  "suffix": ".bs.js",
+  "warnings": {
+    "number": "-23-44",
+    "error": "+8+6+5",
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "remutable",
+  "version": "0.1.0",
+  "description": "ReasonML immutable datastructure library backed by immutablejs",
+  "main": "index.js",
+  "repository": "https://github.com/adnelson/remutable",
+  "author": "Allen Nelson",
+  "license": "MIT",
+  "dependencies": {
+    "bs-platform": "^7.0.1",
+    "immutable": "^4.0.0-rc.12"
+  },
+  "devDependencies": {
+    "husky": "^4.0.9",
+    "lerna": "^3.20.2",
+    "lint-staged": "^9.5.0",
+    "prettier": "^1.19.1"
+  },
+  "lint-staged": {
+    "package.json": [
+      "prettier --write",
+      "git add"
+    ],
+    "**/*.re": [
+      "./run_locked bsrefmt --in-place --print-width 100",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "semi": false,
+    "trailingComma": "es5",
+    "printWidth": 100,
+    "singleQuote": true
+  },
+  "scripts": {
+    "format": "prettier --write package.json && npm-run-all -p format:re format:js",
+    "format:re": "bsrefmt --in-place --print-width 100 src/*.re src/**/*.re",
+    "format:js": "find src __tests__ \\( -name '*.json' -o -name '*.js' -and \\( -not -name '*.bs.js' \\) \\) | xargs prettier --write",
+    "build": "sh -c 'NINJA_ANSI_FORCED=1 ./run_locked bsb -make-world'",
+    "cleanbuild": "yarn clean && yarn build",
+    "clean": "./run_locked bsb -clean-world",
+    "reinstall-bs-platform": "ver=$(cat package.json|jq -r '.devDependencies.\"bs-platform\"'); yarn remove bs-platform; yarn add --dev \"bs-platform@$ver\"",
+    "watch": "yarn clean && onchange -k -i -d 500 '**/*.{re,rei}' bsconfig.json -- sh -c 'yarn build'",
+    "test": "yarn build && jest __tests__",
+    "test:watch": "onchange -v -k -i -d 500 'src/**/*.{re,rei}' 'example/*.re' '__tests__/**/*.{re,rei}' '__tests__/**/*.json' -- sh -c 'clear && yarn test'",
+    "postinstall": "yarn cleanbuild"
+  }
+}

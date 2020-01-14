@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+COMMAND="${@}"
+PIDFILE='.pid.lock'
+
+if [ -z "$COMMAND" ]; then
+    echo "No command to run"
+    exit 1
+fi
+
+while [ -e "$PIDFILE" ]; do
+    PID=$(cat "$PIDFILE")
+    if ! kill -0 "$PID"; then
+        echo "$PIDFILE contains invalid pid $PID. Nuking..."
+        rm "$PIDFILE"
+        break
+    fi
+    echo "Waiting for pid $PID to release the lock..."
+    sleep 1
+done
+
+[ -n "$PID" ] && echo "$PID completed, running command..."
+
+sh -c "$COMMAND" &
+PID=$!
+echo "$PID" > "$PIDFILE"
+wait "$PID"
+rm "$PIDFILE"
