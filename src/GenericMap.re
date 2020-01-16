@@ -23,16 +23,30 @@ module type GenericMap = {
 
   // Access
   let get: (t('k, 'v), 'k) => option('v);
+
   // Return the default if not found
   let getDefault: (t('k, 'v), 'k, 'v) => 'v;
+
+  // Return the default if not found, lazily evaluated
+  let getDefaultLazy: (t('k, 'v), 'k, unit => 'v) => 'v;
+
   // Raise a `NoSuchKey` if not found
   let getExn: (t('k, 'v), 'k) => 'v;
+
   // Raise the given exception if not found
   let getExnWith: (t('k, 'v), 'k, unit => exn) => 'v;
 
+  // Alias to get with flipped order
+  let take: ('k, t('k, 'v)) => option('v);
+
   // Alias to getExn with flipped order
   let takeExn: ('k, t('k, 'v)) => 'v;
+
+  // Alias to getDefault with flipped order
   let takeDefault: ('k, 'v, t('k, 'v)) => 'v;
+
+  // Alias to getDefaultLazy with flipped order
+  let takeDefaultLazy: ('k, unit => 'v, t('k, 'v)) => 'v;
 
   let first: t('k, 'v) => option('v);
   let firstExn: t('k, 'v) => 'v;
@@ -173,6 +187,12 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
     | Some(v) => v
     };
 
+  let getDefaultLazy = (om, k, default) =>
+    switch (get(om, k)) {
+    | None => default()
+    | Some(v) => v
+    };
+
   let getExnWith = (om, k, mkExn) =>
     switch (get(om, k)) {
     | None => raise(mkExn())
@@ -189,8 +209,10 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
       },
     );
 
+  let take = (k, om) => get(om, k);
   let takeExn = (k, om) => getExn(om, k);
   let takeDefault = (k, default, om) => getDefault(om, k, default);
+  let takeDefaultLazy = (k, default, om) => getDefaultLazy(om, k, default);
 
   let each = (f, om) => fromArray(A.map(toArray(om), ((k, v)) => (k, f(v))));
 
