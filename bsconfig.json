@@ -6,12 +6,10 @@
     "module": "commonjs"
   },
   "refmt": 3,
-  "sources": [
-    "src"
-  ],
+  "sources": ["src"],
   "suffix": ".bs.js",
   "warnings": {
     "number": "-23-44",
-    "error": "+8+6+5",
+    "error": "+8+6+5"
   }
 }
