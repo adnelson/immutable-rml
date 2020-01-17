@@ -67,8 +67,11 @@ module type GenericMap = {
 
   // Transformation & iteration
   let forEach: (t('k, 'v), ('v, 'k, t('k, 'v)) => unit) => unit;
-  let map: (t('k, 'v), ('v, 'k, t('k, 'v)) => 'v2) => t('k, 'v2);
+  let map_: (t('k, 'v), ('v, 'k, t('k, 'v)) => 'v2) => t('k, 'v2);
+  let map:  (t('k, 'v1), 'v1 => 'v2) => t('k, 'v2);
+  let mapWithKey:  (t('k, 'v1), ('k, 'v1) => 'v2) => t('k, 'v2);
   let each: ('v1 => 'v2, t('k, 'v1)) => t('k, 'v2);
+  let eachWithKey: (('k, 'v1) => 'v2, t('k, 'v1)) => t('k, 'v2);
   let eachPair: ('k1 => 'k2, 'v1 => 'v2, t('k1, 'v1)) => t('k2, 'v2);
   let reduce: (t('k, 'a), ('b, 'a, 'k, t('k, 'a)) => 'b, 'b) => 'b;
   let set: (t('k, 'v), 'k, 'v) => t('k, 'v);
@@ -141,7 +144,9 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   [@bs.send] external forEach: (t('k, 'v), ('v, 'k, t('k, 'v)) => unit) => unit = "forEach";
   [@bs.send] external has: (t('k, 'v), 'k) => bool = "has";
   [@bs.send] external isEmpty: t('k, 'v) => bool = "isEmpty";
-  [@bs.send] external map: (t('k, 'v), ('v, 'k, t('k, 'v)) => 'v2) => t('k, 'v2) = "map";
+  [@bs.send] external map_: (t('k, 'v), ('v, 'k, t('k, 'v)) => 'v2) => t('k, 'v2) = "map";
+  [@bs.send] external map: (t('k, 'v1), ('v1) => 'v2) => t('k, 'v2) = "map";
+  [@bs.send] external mapWithKey_: (t('k, 'v1), ('v1, 'k) => 'v2) => t('k, 'v2) = "map";
   [@bs.send] external reduce: (t('k, 'a), ('b, 'a, 'k, t('k, 'a)) => 'b, 'b) => 'b = "reduce";
   [@bs.send] external set: (t('k, 'v), 'k, 'v) => t('k, 'v) = "set";
   [@bs.send] external sort: (t('k, 'v), ('v, 'v) => int) => t('k, 'v) = "sort";
@@ -230,8 +235,11 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let takeDefault = (k, default, om) => getDefault(om, k, default);
   let takeDefaultLazy = (k, default, om) => getDefaultLazy(om, k, default);
 
-  // NOTE: I'm sure there's a primitive I could use here which would be more performant.
-  let each = (f, om) => fromArray(A.map(toArray(om), ((k, v)) => (k, f(v))));
+  let mapWithKey = (om, f) => mapWithKey_(om, (v, k) => f(k, v));
+
+  let eachWithKey = (f, om)=> mapWithKey_(om, (v, k) => f(k, v));
+
+  let each = (f, om) => map(om, f);
 
   // NOTE: I'm sure there's a primitive I could use here which would be more performant.
   let eachPair = (fk, fv, om) => fromArray(A.map(toArray(om), ((k, v)) => (fk(k), fv(v))));

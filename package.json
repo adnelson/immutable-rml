@@ -9,10 +9,9 @@
   "dependencies": {
     "immutable": "^4.0.0-rc.12"
   },
-  "peerDependencies": {
-    "bs-platform": ">=5"
-  },
+  "peerDependencies": {},
   "devDependencies": {
+    "@glennsl/bs-jest": "^0.4.9",
     "bs-platform": "^7.0.1",
     "husky": "^4.0.9",
     "lint-staged": "^9.5.0",

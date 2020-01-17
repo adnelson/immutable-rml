@@ -1,12 +1,17 @@
 {
   "name": "immutable-rml",
   "namespace": true,
+  "bs-dev-dependencies": ["@glennsl/bs-jest"],
   "package-specs": {
     "in-source": true,
     "module": "commonjs"
   },
   "refmt": 3,
-  "sources": ["src"],
+  "sources": ["src",
+    {
+      "dir": "__tests__",
+      "type": "dev"
+    }],
   "suffix": ".bs.js",
   "warnings": {
     "number": "-23-44",
