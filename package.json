@@ -9,7 +9,9 @@
   "dependencies": {
     "immutable": "^4.0.0-rc.12"
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+    "bs-platform": ">=5"
+  },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.4.9",
     "bs-platform": "^7.0.1",
@@ -44,7 +46,6 @@
     "reinstall-bs-platform": "ver=$(cat package.json|jq -r '.devDependencies.\"bs-platform\"'); yarn remove bs-platform; yarn add --dev \"bs-platform@$ver\"",
     "watch": "yarn clean && onchange -k -i -d 500 '**/*.{re,rei}' bsconfig.json -- sh -c 'yarn build'",
     "test": "yarn build && jest __tests__",
-    "test:watch": "onchange -v -k -i -d 500 'src/**/*.{re,rei}' 'example/*.re' '__tests__/**/*.{re,rei}' '__tests__/**/*.json' -- sh -c 'clear && yarn test'",
-    "postinstall": "yarn cleanbuild"
+    "test:watch": "onchange -v -k -i -d 500 'src/**/*.{re,rei}' 'example/*.re' '__tests__/**/*.{re,rei}' '__tests__/**/*.json' -- sh -c 'clear && yarn test'"
   }
 }
