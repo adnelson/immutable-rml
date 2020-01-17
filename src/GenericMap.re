@@ -68,6 +68,18 @@ module type GenericMap = {
   // Like `all` but also has access to the key.
   let allWithKey: (('k, 'v) => bool, t('k, 'v)) => bool;
 
+  // Returns true if some value in the map satisfies the predicate.
+  let some: (t('k, 'v), 'v => bool) => bool;
+
+  // Like `some` but also has access to the key.
+  let someWithKey: (t('k, 'v), ('k, 'v) => bool) => bool;
+
+  // Same as `some` but reversed argument order.
+  let any: ('v => bool, t('k, 'v)) => bool;
+
+  // Like `any` but also has access to the key.
+  let anyWithKey: (('k, 'v) => bool, t('k, 'v)) => bool;
+
   // Check if a key is in the map.
   let has: (t('k, 'v), 'k) => bool;
 
@@ -208,11 +220,14 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   include Prims;
 
   // Operations
-  [@bs.get] external size: t('k, 'v) => int = "size";
+  [@bs.get] external size: t('k, 'v) => int = "count";
   [@bs.send] [@bs.return nullable] external get: (t('k, 'v), 'k) => option('v) = "get";
   [@bs.send] external keys: t('k, 'v) => Js.Array.array_like('k) = "keys";
   [@bs.send] external values: t('k, 'v) => Js.Array.array_like('v) = "values";
-  [@bs.send] external every_: (t('k, 'v), ('v, 'k) => bool) => bool = "every";
+  [@bs.send] external every: (t('k, 'v), 'v => bool) => bool = "every";
+  [@bs.send] external everyWithKey_: (t('k, 'v), ('v, 'k) => bool) => bool = "every";
+  [@bs.send] external some: (t('k, 'v), 'v => bool) => bool = "some";
+  [@bs.send] external someWithKey_: (t('k, 'v), ('v, 'k) => bool) => bool = "some";
   [@bs.send] external filter_: (t('k, 'v), ('v, 'k) => bool) => t('k, 'v) = "filter";
   [@bs.send] external forEach: (t('k, 'v), 'v => unit) => unit = "forEach";
   [@bs.send] external forEachWithKey_: (t('k, 'v), ('v, 'k) => unit) => unit = "forEach";
@@ -249,10 +264,12 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let reduceWithKey = (m, start, f) => reduce_(m, (out, v, k) => f(k, v, out), start);
   let fold = (start, f, m) => reduce_(m, (out, v, _) => f(v, out), start);
   let foldWithKey = (start, f, m) => reduce_(m, (out, v, k) => f(k, v, out), start);
-  let every = (m, pred) => every_(m, (v, _) => pred(v));
-  let everyWithKey = (m, pred) => every_(m, (v, k) => pred(k, v));
-  let all = (pred, m) => every_(m, (v, _) => pred(v));
-  let allWithKey = (pred, m) => every_(m, (v, k) => pred(k, v));
+  let everyWithKey = (m, pred) => everyWithKey_(m, (v, k) => pred(k, v));
+  let all = (pred, m) => every(m, pred);
+  let allWithKey = (pred, m) => everyWithKey_(m, (v, k) => pred(k, v));
+  let someWithKey = (m, pred) => someWithKey_(m, (v, k) => pred(k, v));
+  let any = (pred, m) => some(m, pred);
+  let anyWithKey = (pred, m) => someWithKey_(m, (v, k) => pred(k, v));
   let forEachWithKey = (m, f) => forEachWithKey_(m, (v, k) => f(k, v));
   let mergeWith = (m1, m2, f) => mergeWith_(m1, f, m2);
   let zipWith = (m2, f, m1) => mergeWith_(m1, f, m2);
@@ -279,6 +296,7 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
     };
 
   let getExn = (om, k) => getExnWith(om, k, () => NoSuchKey);
+
   let take = (k, om) => get(om, k);
   let takeExn = (k, om) => getExn(om, k);
   let takeDefault = (k, default, om) => getDefault(om, k, default);
@@ -293,6 +311,7 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
     Js.Dict.fromArray(pairs |> Array.map(((k, v)) => (toString(k), v)));
   };
   let fromKeys = (keys, f) => fromArray(A.map(keys, k => (k, f(k))));
+  let fromKeyList = (keys, f) => fromList(L.map(keys, k => (k, f(k))));
 
   let hydrate = (arr, default, om) =>
     fromKeys(arr, k =>
@@ -310,17 +329,10 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
       }
     );
 
-  let fromKeyList = (keys, f) => fromList(L.map(keys, k => (k, f(k))));
-
   let hydrateList = keys => hydrate(keys |> Belt.List.toArray);
-
   let hydrateListWithKey = keys => hydrateWithKey(keys |> Belt.List.toArray);
-
-  let alterKeys: ('k1 => 'k2, t('k1, 'v)) => t('k2, 'v) =
-    (f, om) => fromArray(A.map(toArray(om), ((k, v)) => (f(k), v)));
-
+  let alterKeys = f => eachPair(f, v => v);
   let insert = (k, v, m) => set(m, k, v);
-
   let singleton = (k, v) => fromArray([|(k, v)|]);
 };
 
