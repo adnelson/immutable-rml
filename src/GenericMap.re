@@ -69,6 +69,7 @@ module type GenericMap = {
   let forEach: (t('k, 'v), ('v, 'k, t('k, 'v)) => unit) => unit;
   let map: (t('k, 'v), ('v, 'k, t('k, 'v)) => 'v2) => t('k, 'v2);
   let each: ('v1 => 'v2, t('k, 'v1)) => t('k, 'v2);
+  let eachPair: ('k1 => 'k2, 'v1 => 'v2, t('k1, 'v1)) => t('k2, 'v2);
   let reduce: (t('k, 'a), ('b, 'a, 'k, t('k, 'a)) => 'b, 'b) => 'b;
   let set: (t('k, 'v), 'k, 'v) => t('k, 'v);
   let sort: (t('k, 'v), ('v, 'v) => int) => t('k, 'v);
@@ -94,19 +95,34 @@ module type GenericMap = {
   // Invoke the given function on each key in the array to make an OrderedMap.
   let fromKeyList: (list('k), 'k => 'v) => t('k, 'v);
 
-  // Beginning with some iniital map, create a new map with keys of the given
+  // Beginning with some initial map, create a new map with keys of the given
+  // key array. If the key isn't in the initial map, the default is used.
+  let hydrate: (array('k), 'v, t('k, 'v)) => t('k, 'v);
+
+  // Beginning with some initial map, create a new map with keys of the given
   // key array. If the key isn't in the initial map, the generator function will
   // be called on the key to make a default.
-  let hydrate: (t('k, 'v), array('k), 'k => 'v) => t('k, 'v);
+  let hydrateWithKey: (array('k), 'k => 'v, t('k, 'v)) => t('k, 'v);
 
-  // Beginning with some iniital map, create a new map with keys of the given
+  // Beginning with some initial map, create a new map with keys of the given
   // key list. If the key isn't in the initial map, the generator function will
   // be called on the key to make a default.
-  let hydrateList: (t('k, 'v), list('k), 'k => 'v) => t('k, 'v);
+  let hydrateList: (list('k), 'v, t('k, 'v)) => t('k, 'v);
+
+  // Beginning with some initial map, create a new map with keys of the given
+  // key array. If the key isn't in the initial map, the generator function will
+  // be called on the key to make a default.
+  let hydrateListWithKey: (list('k), 'k => 'v, t('k, 'v)) => t('k, 'v);
 
   // Apply a function to transform keys with the same order. The function must
   // produce a type that can be used as a key.
   let alterKeys: ('k1 => 'k2, t('k1, 'v)) => t('k2, 'v);
+
+// `set` with different argument order
+let add: ('k, 'v, t('k, 'v)) => t('k, 'v);
+
+// Create a map with a single key and value
+let singleton: ('k, 'v) => t('k, 'v);
 };
 
 // Given some primitive functions, makes everything else.
@@ -214,11 +230,23 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let takeDefault = (k, default, om) => getDefault(om, k, default);
   let takeDefaultLazy = (k, default, om) => getDefaultLazy(om, k, default);
 
+  // NOTE: I'm sure there's a primitive I could use here which would be more performant.
   let each = (f, om) => fromArray(A.map(toArray(om), ((k, v)) => (k, f(v))));
+
+  // NOTE: I'm sure there's a primitive I could use here which would be more performant.
+  let eachPair = (fk, fv, om) => fromArray(A.map(toArray(om), ((k, v)) => (fk(k), fv(v))));
 
   let fromKeys = (keys, f) => fromArray(A.map(keys, k => (k, f(k))));
 
-  let hydrate = (om, arr, gen) =>
+  let hydrate = (arr, default, om) =>
+    fromKeys(arr, k =>
+      switch (get(om, k)) {
+      | None => default
+      | Some(v) => v
+      }
+    );
+
+  let hydrateWithKey = (arr, gen, om) =>
     fromKeys(arr, k =>
       switch (get(om, k)) {
       | None => gen(k)
@@ -228,14 +256,17 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
 
   let fromKeyList = (keys, f) => fromList(L.map(keys, k => (k, f(k))));
 
-  let hydrateList = (om, l, gen) =>
-    fromKeyList(l, k =>
-      switch (get(om, k)) {
-      | None => gen(k)
-      | Some(v) => v
-      }
-    );
+  let hydrateList = (keys) =>
+    hydrate(keys |> Belt.List.toArray);
+
+  let hydrateListWithKey = (keys) =>
+    hydrateWithKey(keys |> Belt.List.toArray);
 
   let alterKeys: ('k1 => 'k2, t('k1, 'v)) => t('k2, 'v) =
     (f, om) => fromArray(A.map(toArray(om), ((k, v)) => (f(k), v)));
+
+// `setPure` with different argument order
+let add = (k, v, m) => set(m, k, v);
+
+let singleton = (k, v) => fromArray([|(k, v)|]);
 };
