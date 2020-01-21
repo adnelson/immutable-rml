@@ -1,6 +1,6 @@
 {
   "name": "immutable-rml",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "ReasonML immutable datastructure library backed by immutablejs",
   "main": "index.js",
   "repository": "https://github.com/adnelson/remutable",
