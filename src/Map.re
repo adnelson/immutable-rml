@@ -11,8 +11,8 @@ module Map: GenericMap.GenericMap =
   });
 
 // Ordered map data structure
-module OrderedMap: GenericMap.GenericMap =
-  GenericMap.MakeMap({
+module OrderedMap: GenericMap.GenericOrderedMap =
+  GenericMap.MakeOrderedMap({
     // Abstract
     type t('k, 'v);
 
