@@ -1,65 +1,9 @@
-module M = Map.OrderedMap;
+// Dict module tests.
+// Tests aren't needed for everything but should exist for any non-trivial functionality.
+module M = Map.Map;
+module S = String;
 open Jest;
 open Expect;
-
-module D = Js.Dict;
-module S = Js.String;
-module A = Belt.Array;
-
-
-describe("ordering", () => {
-  let map =
-    [|("A", "Candy Bars"), ("B", "Peanut Butter Cups"), ("C", "Ice Cream")|] |> M.fromArray;
-  let empty = M.empty();
-
-  test("first", () => expect(M.first(map)) |> toEqual(Some("Candy Bars")));
-  test("firstKey", () => expect(M.firstKey(map)) |> toEqual(Some("A")));
-  test("firstPair", () => expect(M.firstPair(map)) |> toEqual(Some(("A", "Candy Bars"))));
-  test("last", () => expect(M.last(map)) |> toEqual(Some("Ice Cream")));
-  test("lastKey", () => expect(M.lastKey(map)) |> toEqual(Some("C")));
-  test("lastPair", () => expect(M.lastPair(map)) |> toEqual(Some(("C", "Ice Cream"))));
-
-  test("first when empty", () => expect(M.first(empty)) |> toEqual(None));
-  test("firstKey when empty", () => expect(M.firstKey(empty)) |> toEqual(None));
-  test("firstPair when empty", () => expect(M.firstPair(empty)) |> toEqual(None));
-  test("last when empty", () => expect(M.last(empty)) |> toEqual(None));
-  test("lastKey when empty", () => expect(M.lastKey(empty)) |> toEqual(None));
-  test("lastPair when empty", () => expect(M.lastPair(empty)) |> toEqual(None));
-
-  describe("exception-throwing", () => {
-  test("firstExn", () => expect(M.firstExn(map)) |> toEqual(("Candy Bars")));
-  test("firstKeyExn", () => expect(M.firstKeyExn(map)) |> toEqual(("A")));
-  test("firstPairExn", () => expect(M.firstPairExn(map)) |> toEqual((("A", "Candy Bars"))));
-  test("lastExn", () => expect(M.lastExn(map)) |> toEqual(("Ice Cream")));
-  test("lastKeyExn", () => expect(M.lastKeyExn(map)) |> toEqual(("C")));
-  test("lastPairExn", () => expect(M.lastPairExn(map)) |> toEqual((("C", "Ice Cream"))));
-
-})
-});
-
-describe("mapping", () => {
-  let map =
-    [|("A", "Candy Bars"), ("B", "Peanut Butter Cups"), ("C", "Ice Cream")|] |> M.fromArray;
-
-  describe("map (data structure first argument)", () => {
-    test("map values only", () =>
-      expect(M.map(map, S.length) |> M.valueArray) |> toEqual([|10, 18, 9|])
-    );
-    test("map with key", () =>
-      expect(M.mapWithKey(map, (k, s) => k ++ s) |> M.valueArray)
-      |> toEqual([|"ACandy Bars", "BPeanut Butter Cups", "CIce Cream"|])
-    );
-  });
-  describe("each (data structure last argument)", () => {
-    test("each values only", () =>
-      expect(map |> M.each(S.length) |> M.valueArray) |> toEqual([|10, 18, 9|])
-    );
-    test("each with key", () =>
-      expect(map |> M.eachWithKey((k, s) => k ++ s) |> M.valueArray)
-      |> toEqual([|"ACandy Bars", "BPeanut Butter Cups", "CIce Cream"|])
-    );
-  });
-});
 
 describe("construction", () => {
   test("singleton", () =>

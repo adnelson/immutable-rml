@@ -1,5 +1,6 @@
 module L = Belt.List;
 module A = Belt.Array;
+module O = Belt.Option;
 
 // Functions implemented by all maps
 module type GenericMap = {
@@ -8,13 +9,24 @@ module type GenericMap = {
   type t('k, 'v);
   exception IsEmpty;
 
-  // Construction
-  let fromArray: array(('k, 'v)) => t('k, 'v);
-  let fromList: list(('k, 'v)) => t('k, 'v);
-  let fromDict: Js.Dict.t('v) => t(string, 'v);
+  // Create an empty map.
   let empty: unit => t('k, 'v);
 
-  // Access
+  // Make from an array of key/value pairs.
+  let fromArray: array(('k, 'v)) => t('k, 'v);
+
+  // Alias for `fromArray`
+  let make: array(('k, 'v)) => t('k, 'v);
+
+  let makeFromSomes: array(('k, option('v))) => t('k, 'v);
+
+  // Make from a list
+  let fromList: list(('k, 'v)) => t('k, 'v);
+
+  // Make from a dictionary, output has string keys.
+  let fromDict: Js.Dict.t('v) => t(string, 'v);
+
+  // Look up a key in the map
   let get: (t('k, 'v), 'k) => option('v);
 
   // Return the default if not found
@@ -46,6 +58,13 @@ module type GenericMap = {
 
   // Filter out objects by key and value.
   let keepWithKey: (t('k, 'v), ('k, 'v) => bool) => t('k, 'v);
+
+  // Like `keep` but with the ability to transform the value.
+  // Map and filter at the same time.
+  let keepMap: (t('k, 'v1), 'v1 => option('v2)) => t('k, 'v2);
+
+  // Like `keepMap` but has access to the key as well
+  let keepMapWithKey: (t('k, 'v1), ('k, 'v1) => option('v2)) => t('k, 'v2);
 
   // Same as `keep` with reverse argument order.
   let filter: ('v => bool, t('k, 'v)) => t('k, 'v);
@@ -129,7 +148,7 @@ module type GenericMap = {
   let set: (t('k, 'v), 'k, 'v) => t('k, 'v);
 
   // Like `set` with reverse argument order.
-  let insert: ('k, 'v, t('k, 'v)) => t('k, 'v);
+  let add: ('k, 'v, t('k, 'v)) => t('k, 'v);
 
   // Conversions
   let toArray: t('k, 'v) => array(('k, 'v));
@@ -151,6 +170,9 @@ module type GenericMap = {
 
   // Invoke the given function on each key in the array to make an OrderedMap.
   let fromKeys: (array('k), 'k => 'v) => t('k, 'v);
+
+  // Like `fromKeys` but keys can be any type and a key conversion function is passed in.
+  let fromKeysWith: (array('t), 't => 'k, 't => 'v) => t('k, 'v);
 
   // Invoke the given function on each key in the array to make an OrderedMap.
   let fromKeyList: (list('k), 'k => 'v) => t('k, 'v);
@@ -180,6 +202,18 @@ module type GenericMap = {
 
   // Create a map with a single key and value
   let singleton: ('k, 'v) => t('k, 'v);
+
+  // Like `singleton` but takes two values
+  let pair: ('k, 'v, 'k, 'v) => t('k, 'v);
+
+  // Like `singleton` but takes three values
+  let triple: ('k, 'v, 'k, 'v, 'k, 'v) => t('k, 'v);
+
+  // Merge two maps. Duplicate keys prefer the first argument.
+  let override: (~values: t('k, 'v), t('k, 'v)) => t('k, 'v);
+
+  // Merge two maps. Duplicate keys prefer the original map.
+  let mergeNoOverride: (~values: t('k, 'v), t('k, 'v)) => t('k, 'v);
 };
 
 module type GenericOrderedMap = {
@@ -203,6 +237,24 @@ module type GenericOrderedMap = {
   // Get the first key/value pair out of a map, throwing an exception if empty.
   let firstPairExn: t('k, 'v) => ('k, 'v);
 
+  // Get the last value out of a map.
+  let last: t('k, 'v) => option('v);
+
+  // Get the last value out of a map, throwing an exception if empty.
+  let lastExn: t('k, 'v) => 'v;
+
+  // Get the last key out of a map.
+  let lastKey: t('k, 'v) => option('k);
+
+  // Get the last key out of a map, throwing an exception if empty.
+  let lastKeyExn: t('k, 'v) => 'k;
+
+  // Get the last key/value pair out of a map.
+  let lastPair: t('k, 'v) => option(('k, 'v));
+
+  // Get the last key/value pair out of a map, throwing an exception if empty.
+  let lastPairExn: t('k, 'v) => ('k, 'v);
+
   // Sort the ordered map by a comparison on values.
   let sort: (t('k, 'v), ('v, 'v) => int) => t('k, 'v);
 };
@@ -218,6 +270,10 @@ module type Primitives = {
 // Given some primitive functions, makes everything else.
 module MakeMap = (Prims: Primitives) : GenericMap => {
   include Prims;
+
+  let make = fromArray;
+  let makeFromSomes = arr =>
+    fromArray(A.keepMap(arr, ((k, optV)) => O.map(optV, v => (k, v))));
 
   // Operations
   [@bs.get] external size: t('k, 'v) => int = "count";
@@ -242,6 +298,7 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   [@bs.send] external equals: (t('k, 'v), t('k, 'v)) => bool = "equals";
   [@bs.send]
   external mergeWith_: (t('k, 'a), ('a, 'b) => 'c, t('k, 'b)) => t('k, 'c) = "mergeWith";
+  [@bs.send] external merge: (t('k, 'v), t('k, 'v)) => t('k, 'v) = "merge";
 
   let fromList = l => fromArray(L.toArray(l));
 
@@ -277,6 +334,9 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let eachWithKey = (f, om) => mapWithKey_(om, (v, k) => f(k, v));
   let each = (f, om) => map(om, f);
 
+  let keepMap = (m, f) => m |> each(f) |> filter(O.isSome) |> each(O.getExn);
+  let keepMapWithKey = (m, f) => m |> eachWithKey(f) |> filter(O.isSome) |> each(O.getExn);
+
   let getDefaultLazy = (om, k, default) =>
     switch (get(om, k)) {
     | None => default()
@@ -311,7 +371,12 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
     Js.Dict.fromArray(pairs |> Array.map(((k, v)) => (toString(k), v)));
   };
   let fromKeys = (keys, f) => fromArray(A.map(keys, k => (k, f(k))));
+  let fromKeysWith = (keys, toKey, toValue) =>
+    fromArray(A.map(keys, k => (toKey(k), toValue(k))));
   let fromKeyList = (keys, f) => fromList(L.map(keys, k => (k, f(k))));
+
+  let override = (~values, dict) => merge(dict, values);
+  let mergeNoOverride = (~values, dict) => merge(values, dict);
 
   let hydrate = (arr, default, om) =>
     fromKeys(arr, k =>
@@ -332,13 +397,16 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let hydrateList = keys => hydrate(keys |> Belt.List.toArray);
   let hydrateListWithKey = keys => hydrateWithKey(keys |> Belt.List.toArray);
   let alterKeys = f => eachPair(f, v => v);
-  let insert = (k, v, m) => set(m, k, v);
+  let add = (k, v, m) => set(m, k, v);
   let singleton = (k, v) => fromArray([|(k, v)|]);
+  let pair = (k1, v1, k2, v2) => fromArray([|(k1, v1), (k2, v2)|]);
+  let triple = (k1, v1, k2, v2, k3, v3) => fromArray([|(k1, v1), (k2, v2), (k3, v3)|]);
 };
 
 module MakeOrderedMap = (Prims: Primitives) : GenericOrderedMap => {
   include MakeMap(Prims);
   [@bs.send] [@bs.return nullable] external first: t('k, 'v) => option('v) = "first";
+  [@bs.send] [@bs.return nullable] external last: t('k, 'v) => option('v) = "last";
   [@bs.send] external sort: (t('k, 'v), ('v, 'v) => int) => t('k, 'v) = "sort";
 
   let firstKey: t('k, 'v) => option('k) = om => A.get(keyArray(om), 0);
@@ -367,5 +435,37 @@ module MakeOrderedMap = (Prims: Primitives) : GenericOrderedMap => {
       switch (first(om)) {
       | None => raise(IsEmpty)
       | Some(responses) => (firstKeyExn(om), responses)
+      };
+
+  let lastKey: t('k, 'v) => option('k) = om => {
+    let keys = keyArray(om);
+    A.get(keys, A.length(keys) -1)};
+
+  let lastKeyExn: t('k, 'v) => 'k =
+    om =>
+      switch (lastKey(om)) {
+      | None => raise(IsEmpty)
+      | Some(k) => k
+      };
+
+  let lastExn = om =>
+    switch (last(om)) {
+    | Some(x) => x
+    | None => raise(IsEmpty)
+    };
+
+  let lastPair = om =>
+    switch (last(om)) {
+    | None => None
+    | Some(responses) => {
+        let keys = keyArray(om);
+        Some((A.getExn(keys, A.length(keys) - 1), responses))}
+    };
+
+  let lastPairExn: t('k, 'v) => ('k, 'v) =
+    om =>
+      switch (last(om)) {
+      | None => raise(IsEmpty)
+      | Some(responses) => (O.getExn(lastKey(om)), responses)
       };
 };

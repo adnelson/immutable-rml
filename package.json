@@ -38,7 +38,7 @@
   },
   "scripts": {
     "format": "npm-run-all -p format:re format:js",
-    "format:re": "find src -name '*.re' | xargs bsrefmt --in-place --print-width 100",
+    "format:re": "find src __tests__ -name '*.re' | xargs bsrefmt --in-place --print-width 100",
     "format:js": "find *.json src \\( -name '*.json' -o -name '*.js' -and \\( -not -name '*.bs.js' \\) \\) | xargs prettier --write",
     "build": "sh -c 'NINJA_ANSI_FORCED=1 ./run_locked bsb -make-world'",
     "cleanbuild": "yarn clean && yarn build",
