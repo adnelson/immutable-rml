@@ -275,8 +275,8 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let makeFromSomes = arr =>
     fromArray(A.keepMap(arr, ((k, optV)) => O.map(optV, v => (k, v))));
 
-  // Operations
-  [@bs.get] external size: t('k, 'v) => int = "count";
+  // Primitive operations
+  [@bs.send] external size: t('k, 'v) => int = "count";
   [@bs.send] [@bs.return nullable] external get: (t('k, 'v), 'k) => option('v) = "get";
   [@bs.send] external keys: t('k, 'v) => Js.Array.array_like('k) = "keys";
   [@bs.send] external values: t('k, 'v) => Js.Array.array_like('v) = "values";
@@ -437,9 +437,11 @@ module MakeOrderedMap = (Prims: Primitives) : GenericOrderedMap => {
       | Some(responses) => (firstKeyExn(om), responses)
       };
 
-  let lastKey: t('k, 'v) => option('k) = om => {
-    let keys = keyArray(om);
-    A.get(keys, A.length(keys) -1)};
+  let lastKey: t('k, 'v) => option('k) =
+    om => {
+      let keys = keyArray(om);
+      A.get(keys, A.length(keys) - 1);
+    };
 
   let lastKeyExn: t('k, 'v) => 'k =
     om =>
@@ -457,9 +459,9 @@ module MakeOrderedMap = (Prims: Primitives) : GenericOrderedMap => {
   let lastPair = om =>
     switch (last(om)) {
     | None => None
-    | Some(responses) => {
-        let keys = keyArray(om);
-        Some((A.getExn(keys, A.length(keys) - 1), responses))}
+    | Some(responses) =>
+      let keys = keyArray(om);
+      Some((A.getExn(keys, A.length(keys) - 1), responses));
     };
 
   let lastPairExn: t('k, 'v) => ('k, 'v) =
