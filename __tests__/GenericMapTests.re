@@ -151,4 +151,17 @@ module GenericMapTests = (M: GenericMap) => {
       |> toEqual(M.pair("x", 123, "z", 9999))
     );
   });
+
+  describe("all/any", () => {
+      let m = M.triple("a", 1, "b", 2, "c", 3);
+      test("all even = false", () => expect(m |> M.all(i => i mod 2 == 0)) |> toBe(false));
+      test("all > 0 = true", () => expect(m |> M.all(i => i > 0)) |> toBe(true));
+      test("any even = true", () => expect(m |> M.any(i => i mod 2 == 0)) |> toBe(true));
+      test("any > 0 = true", () => expect(m |> M.any(i => i > 0)) |> toBe(true));
+    describe("with key", () => {
+      test("all false", () => expect(m |> M.allWithKey((k, i) => k == "a" && i mod 2 == 0)) |> toBe(false));
+      test("all true", () => expect(m |> M.allWithKey((k, i) => k == "a" || i > 1)) |> toBe(true));
+      test("any false", () => expect(m |> M.anyWithKey((k, _) => S.length(k) > 1)) |> toBe(false));
+      test("any true", () => expect(m |> M.anyWithKey((k, i) => k == "a" || i > 1)) |> toBe(true));});
+  });
 };
