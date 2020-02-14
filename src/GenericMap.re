@@ -147,8 +147,14 @@ module type GenericMap = {
   // Add a key to the map.
   let set: (t('k, 'v), 'k, 'v) => t('k, 'v);
 
+  // Remove a key from the map.
+  let delete: (t('k, 'v), 'k) => t('k, 'v);
+
   // Like `set` with reverse argument order.
   let add: ('k, 'v, t('k, 'v)) => t('k, 'v);
+
+  // Like `delete` with reverse argument order.
+  let remove: ('k, t('k, 'v)) => t('k, 'v);
 
   // Conversions
   let toArray: t('k, 'v) => array(('k, 'v));
@@ -293,6 +299,7 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   [@bs.send] external mapWithKey_: (t('k, 'v1), ('v1, 'k) => 'v2) => t('k, 'v2) = "map";
   [@bs.send] external reduce_: (t('k, 'a), ('b, 'a, 'k) => 'b, 'b) => 'b = "reduce";
   [@bs.send] external set: (t('k, 'v), 'k, 'v) => t('k, 'v) = "set";
+  [@bs.send] external delete: (t('k, 'v), 'k) => t('k, 'v) = "delete";
   [@bs.send] external toArray: t('k, 'v) => array(('k, 'v)) = "toArray";
   [@bs.send] external toObject: t(string, 'v) => Js.Dict.t('v) = "toObject";
   [@bs.send] external equals: (t('k, 'v), t('k, 'v)) => bool = "equals";
@@ -398,6 +405,7 @@ module MakeMap = (Prims: Primitives) : GenericMap => {
   let hydrateListWithKey = keys => hydrateWithKey(keys |> Belt.List.toArray);
   let alterKeys = f => eachPair(f, v => v);
   let add = (k, v, m) => set(m, k, v);
+  let remove = (k, m) => delete(m, k);
   let singleton = (k, v) => fromArray([|(k, v)|]);
   let pair = (k1, v1, k2, v2) => fromArray([|(k1, v1), (k2, v2)|]);
   let triple = (k1, v1, k2, v2, k3, v3) => fromArray([|(k1, v1), (k2, v2), (k3, v3)|]);

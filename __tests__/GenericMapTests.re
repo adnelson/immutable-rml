@@ -123,6 +123,16 @@ module GenericMapTests = (M: GenericMap) => {
     });
   });
 
+  describe("removing keys", () => {
+    let d = M.pair("a", 1, "b", 2);
+    test("remove a key with `delete`", () => {
+      expect(M.delete(d, "b") |> M.toObject) |> toEqual([%raw {| {a: 1} |}])
+    });
+    test("remove a key with `remove`", () => {
+      expect(d |> M.remove("a") |> M.toObject) |> toEqual([%raw {| {b: 2} |}])
+    });
+  });
+
   describe("filtering", () => {
     let d = M.triple("x", 123, "y", 1000, "z", 9999);
     test("keep", () =>
